@@ -41,3 +41,5 @@ luac.out
 
 tags
 test.sh
+.luarc.json
+nvim
