@@ -35,10 +35,9 @@ I hope you enjoy your Neovim journey,
 
 P.S. You can delete this when you're done too. It's your config now :)
 --]]
-
 -- Set <space> as the leader key
 -- See `:help mapleader`
---  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
+
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
@@ -75,7 +74,8 @@ require('lazy').setup({
 
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
-  { -- LSP Configuration & Plugins
+  {
+    -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
     dependencies = {
       -- Automatically install LSPs to stdpath for neovim
@@ -91,14 +91,35 @@ require('lazy').setup({
     },
   },
 
-  { -- Autocompletion
+  {
+    -- Autocompletion
     'hrsh7th/nvim-cmp',
-    dependencies = { 'hrsh7th/cmp-nvim-lsp', 'L3MON4D3/LuaSnip', 'saadparwaiz1/cmp_luasnip' },
+    event = { 'BufReadPost', 'BufNewFile' },
+    dependencies = {
+      'hrsh7th/cmp-nvim-lsp',
+      'L3MON4D3/LuaSnip',
+      'saadparwaiz1/cmp_luasnip',
+      'onsails/lspkind.nvim',
+      'windwp/nvim-autopairs'
+    },
+    config = function()
+      local cpm_autopairs = require('nvim-autopairs.completion.cmp')
+      local cmp = require('cmp')
+      local luasnip = require('luasnip')
+      local lspkind = require('lspkind')
+
+      require('nvim-autopairs').setup()
+
+      cmp.event:on('confirm_done', cpm_autopairs.on_confirm_done())
+
+      require('luasnip.loaders.from_vscode').lazy_load()
+    end
   },
 
   -- Useful plugin to show you pending keybinds.
-  { 'folke/which-key.nvim', opts = {} },
-  { -- Adds git releated signs to the gutter, as well as utilities for managing changes
+  { 'folke/which-key.nvim',          opts = {} },
+  {
+    -- Adds git releated signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
     opts = {
       -- See `:help gitsigns.txt`
@@ -112,7 +133,8 @@ require('lazy').setup({
     },
   },
 
-  { -- Theme inspired by Atom
+  {
+    -- Theme inspired by Atom
     'navarasu/onedark.nvim',
     priority = 1000,
     config = function()
@@ -120,31 +142,70 @@ require('lazy').setup({
     end,
   },
 
-  { -- Set lualine as statusline
+  {
+    -- Set lualine as statusline
     'nvim-lualine/lualine.nvim',
     -- See `:help lualine.txt`
+    event = "VeryLazy",
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'catppuccin',
         component_separators = '|',
         section_separators = '',
       },
     },
   },
 
-  { -- Add indentation guides even on blank lines
+  {
+    -- Add indentation guides even on blank lines
     'lukas-reineke/indent-blankline.nvim',
-    -- Enable `lukas-reineke/indent-blankline.nvim`
-    -- See `:help indent_blankline.txt`
-    opts = {
-      char = '┊',
-      show_trailing_blankline_indent = false,
-    },
+    main = "ibl",
+    opts = {},
+    config = function()
+      require('ibl').setup({
+        indent = {
+          char = "|"
+        },
+        scope = {
+          enabled = false,
+          show_start = false,
+          show_end = false,
+        },
+      })
+    end
+  },
+
+  {
+    'stevearc/oil.nvim',
+    opts = {},
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    config = function()
+      require('oil').setup({
+        keymaps = {
+          ["g?"] = "actions.show_help",
+          ["<CR>"] = "actions.select",
+          ["<C-\\>"] = "actions.select_vsplit",
+          ["<C-enter>"] = "actions.select_split", -- this is used to navigate left
+          ["<C-t>"] = "actions.select_tab",
+          ["<C-p>"] = "actions.preview",
+          ["<C-c>"] = "actions.close",
+          ["<C-r>"] = "actions.refresh",
+          ["-"] = "actions.parent",
+          ["_"] = "actions.open_cwd",
+          ["`"] = "actions.cd",
+          ["~"] = "actions.tcd",
+          ["gs"] = "actions.change_sort",
+          ["gx"] = "actions.open_external",
+          ["g."] = "actions.toggle_hidden",
+        },
+        use_default_keymaps = false,
+      })
+    end,
   },
 
   -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim', opts = {} },
+  { 'numToStr/Comment.nvim',         opts = {} },
 
   -- Fuzzy Finder (files, lsp, etc)
   { 'nvim-telescope/telescope.nvim', version = '*', dependencies = { 'nvim-lua/plenary.nvim' } },
@@ -162,7 +223,8 @@ require('lazy').setup({
     end,
   },
 
-  { -- Highlight, edit, and navigate code
+  {
+    -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     dependencies = {
       'nvim-treesitter/nvim-treesitter-textobjects',
@@ -172,10 +234,67 @@ require('lazy').setup({
     end,
   },
 
+  {
+    'ThePrimeagen/harpoon',
+    lazy = true
+  },
+
+  {
+    'RRethy/vim-illuminate',
+    lazy = true,
+    config = function()
+      require('illuminate').configure({
+        under_cursor = false,
+        filetypes_denylist = {
+          "DressingSelect",
+          "Outline",
+          "TelescopePrompt",
+          "alpha",
+          "harpoon",
+          "toggleterm",
+          "neo-tree",
+          "Spectre",
+          "reason"
+        },
+      })
+    end,
+  },
+
+  {
+    'stevearc/dressing.nvim',
+    config = function()
+      require('dressing').setup()
+    end
+  },
+
+  {
+    -- Catppuccin theme
+    "catppuccin/nvim",
+    name = "catppuccin",
+    config = function()
+      require('catppuccin').setup({
+        integrations = {
+          cmp = true,
+          gitsigns = true,
+          mason = true,
+          telescope = true,
+          treesitter = true,
+          treesitter_context = true,
+        },
+      })
+    end
+  },
+
+  {
+    -- telescope file browser
+    "nvim-telescope/telescope-file-browser.nvim",
+    dependencies = { "nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim", "nvim-tree/nvim-web-devicons" }
+  },
+
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
   --       Uncomment any of the lines below to enable them.
-  -- require 'kickstart.plugins.autoformat',
+  require 'kickstart.plugins.autoformat',
   -- require 'kickstart.plugins.debug',
 
   -- NOTE: The import below automatically adds your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -198,13 +317,22 @@ vim.o.hlsearch = false
 -- Make line numbers default
 vim.wo.number = true
 
+-- set tab to 4 spaces
+vim.o.tabstop = 4
+vim.o.softtabstop = 4
+vim.o.expandtab = true
+
+-- numbers and relative numbers
+vim.o.nu = true
+vim.o.rnu = true
+
 -- Enable mouse mode
 vim.o.mouse = 'a'
 
 -- Sync clipboard between OS and Neovim.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
-vim.o.clipboard = 'unnamedplus'
+vim.o.clipboard = 'unnamed,unnamedplus'
 
 -- Enable break indent
 vim.o.breakindent = true
@@ -229,6 +357,24 @@ vim.o.completeopt = 'menuone,noselect'
 
 -- NOTE: You should make sure your terminal supports this
 vim.o.termguicolors = true
+
+-- Enable auto indeting
+vim.o.smartindent = true
+vim.o.breakindent = true
+vim.o.wrap = false
+
+
+-- set fold setting
+vim.o.foldcolumn = "0"
+vim.o.foldlevel = 99
+vim.o.foldlevelstart = 99
+vim.o.foldenable = true
+
+-- always keep 10 lines above/below cursor unless at start/end of file
+vim.o.scrolloff = 10
+
+-- place a column line
+vim.o.colorcolumn = "100"
 
 -- [[ Basic Keymaps ]]
 
@@ -284,11 +430,68 @@ vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { de
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 
+-- oil keymap
+vim.keymap.set('n', '<leader>ex', function()
+  require('oil').toggle_float()
+end, { desc = 'Open oil [Ex]plorer', noremap = true })
+
+
+-- harpoon keymap
+local harpoon_ui = require('harpoon.ui')
+local harpoon_mark = require('harpoon.mark')
+
+vim.keymap.set('n', '<leader>ho', function()
+  harpoon_ui.toggle_quick_menu()
+end, { desc = '[H]arpoon [O]pen UI', noremap = true })
+
+vim.keymap.set('n', '<leader>ha', function()
+  harpoon_mark.add_file()
+end, { desc = '[H]arpoon [A]dd current file', noremap = true })
+
+vim.keymap.set('n', '<leader>hr', function()
+  harpoon_mark.rm_file()
+end, { desc = '[H]arpoon [R]emove current file', noremap = true })
+
+vim.keymap.set('n', '<leader>hc', function()
+  harpoon_mark.clear_all()
+end, { desc = '[H]arpoon [C]lear all files', noremap = true })
+
+vim.keymap.set('n', '<leader>1', function()
+  harpoon_ui.nav_file(1)
+end, { desc = 'jump to harpooned file 1', noremap = true })
+
+vim.keymap.set('n', '<leader>2', function()
+  harpoon_ui.nav_file(2)
+end, { desc = 'jump to harpooned file 2', noremap = true })
+
+vim.keymap.set('n', '<leader>3', function()
+  harpoon_ui.nav_file(3)
+end, { desc = 'jump to harpooned file 3', noremap = true })
+
+vim.keymap.set('n', '<leader>4', function()
+  harpoon_ui.nav_file(4)
+end, { desc = 'jump to harpooned file 4', noremap = true })
+
+vim.keymap.set('n', '<leader>5', function()
+  harpoon_ui.nav_file(5)
+end, { desc = 'jump to harpooned file 5', noremap = true })
+
+-- [[ Telescope file browser ]]
+require('telescope').load_extension 'file_browser'
+
+vim.api.nvim_set_keymap(
+  "n",
+  "<space>fb",
+  ":Telescope file_browser path=%:p:h select_buffer=true",
+  { noremap = true }
+)
+
+
 -- [[ Configure Treesitter ]]
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'help', 'vim' },
+  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'vim', 'java' },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -490,8 +693,20 @@ cmp.setup {
   sources = {
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
+    { name = 'path' },
+    { name = 'buffer' }
   },
 }
 
+vim.cmd.colorscheme "catppuccin-macchiato"
+vim.cmd([[
+  set relativenumber
+  set number
+  set showmatch		" show matching
+  set hlsearch		" highlight search
+  set autoindent		" indent a new line the amount as the line just typed
+]])
+
+require("izzulh")
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
